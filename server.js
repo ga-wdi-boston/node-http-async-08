@@ -34,6 +34,12 @@ server.listen(8888, function() {
 	console.log("Server is up and listening.");
 
 	http.get("http://" + process.argv[2] + ":8888/", function(res) {
-		return;
+		var responseText = '';
+		res.on('data', function(d) {
+			responseText += d;
+		});
+		res.on('end', function() {
+			console.log(responseText);
+		});
 	});
 });
