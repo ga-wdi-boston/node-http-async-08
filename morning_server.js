@@ -39,7 +39,7 @@ function requestHandler(request, response) {
 					responseText,
 					correct = false;
 
-				if(postData.slice(1, postData.length-1) === codes[request.connection.remoteAddress])
+				if(postData === codes[request.connection.remoteAddress])
 					correct = true;
 
 				responseText = correct ? "Success!" : "Failure!";
