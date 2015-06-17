@@ -2,7 +2,7 @@
 
 ## Morning
 
-First, you'll want to write a client, based on `client.js`, to interface with `morning\_server.js`.
+First, you'll want to write a client, based on `client.js`, to interface with `morning_server.js`.
 
 To test your client, first run `morning_server.js`. Starting from a shell in the same directory as the file, enter this command:
 
