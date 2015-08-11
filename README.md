@@ -271,7 +271,7 @@ Create a new server, and give it two routes/control paths for each of the above 
 Once that's done, go to `client.js` and create requests that hit those routes.
 
 > ##### Aside :: `async.parallel`
-> Let's look at an example of how `http` and `async` can be used in tandem.
+> Let's look at another example of how `http` and `async` can be used in tandem.
 >
 > Suppose that we wanted a service that would call up any three websites, count the number of characters on each page, and return the address of the longest page (in characters).
 >
@@ -312,7 +312,6 @@ async.parallel({
 > If we want to integrate these two things, we need to change 'charsOnPage' so that it passes its results back to `async`, rather than just printing them to the console.
 ```javascript
 var async = require('async');
-
 var charsOnPage = function(url, callback) {
   http.get(url, function(response){
     var body = '';
@@ -325,7 +324,6 @@ var charsOnPage = function(url, callback) {
     callback(e, null);              // pass out error, with no results
   });
 };
-
 async.parallel({
   "http://www.google.com" : function(callback){charsOnPage("http://www.google.com", callback);},
   "http://www.zombo.com/" : function(callback){charsOnPage("http://www.zombo.com", callback);},
