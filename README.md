@@ -3,7 +3,7 @@
 ## Objectives
 - Use the `http` Node module to create an HTTP client and make requests.
 - Use the `http` Node module to create an HTTP server and set up routing and control for the handling of requests.
-- Use the `async` module in conjunction with `http` to set up series, parallel, and waterfall processes.
+- Use the `async` module in conjunction with `http` to set up series and parallel processes.
 
 ## Prerequisites
 - Using `require` to load Node modules.
@@ -125,7 +125,7 @@ headers: {
 }
 ```
 
-> ##### Aside :: `async`
+> ##### Aside :: `async.series`
 > Suppose that we wanted to create a combined action out of logging in and retrieving documents. We could just try to call them both one at a time, in order, e.g.
 ```javascript
 login();
@@ -143,18 +143,21 @@ getDocuments();
 var async = require('async');
 ...
 async.series([
-    function(next){
+    function(callback){
       login();
-      next(error,result);
+      callback(error,result);
       // Invokes the next callback in the chain, indirectly. Also tries to pass its result to the 'results' array,
       // or jumps immediately to the final callback (if it exists) if an error is hit.
     },
-    function(next){
+    function(callback){
       getDocuments();
-      ext(error,result);
+      callback(error,result);
     },
   ],
-  function(err, results) {}   // optional callback function for processing results of each individual step
+  function(err, results) {
+    // Optional callback function for processing the collected results of each individual step
+    // and for handling any errors that might come up during the process.
+  }
 );
 ```
 > `async` has a number of other useful methods as well; some of the most common are `parallel` (which allows us to launch multiple processes at once, and wait until all have finished before moving on) and `waterfall` (almost the same as `series`, except that each step's output is daisy-chained to the next step).
@@ -263,11 +266,73 @@ var fakeDB = {
 }
 ```
 
-Give your server two routes/control paths for each of the above resources - specifically, an `index` action and a `create` action.
+Create a new server, and give it two routes/control paths for each of the above resources - specifically, an `index` action and a `create` action.
 
 Once that's done, go to `client.js` and create requests that hit those routes.
 
-<!-- ## `http` + `async`
+> ##### Aside :: `async.parallel`
+> Let's look at an example of how `http` and `async` can be used in tandem.
+>
+> Suppose that we wanted a service that would call up any three websites, count the number of characters on each page, and return the address of the longest page (in characters).
+>
+> Here's how we might implement that process for a single page:
+```javascript
+var charsOnPage = function(url, callback) {
+  http.get(url, function(response){
+    var body = '';
+    response.setEncoding('utf8');
+    response.on('data', function(data){ body += data; });
+    response.on('end', function(){
+      console.log(body.length);
+    });
+  }).on('error', function(e){
+    console.error(e);
+  });
+};
+```
+> In this case, we might want to use the `async` module to coordinate the different requests; in particular, we'd probably want to use `async.parallel`, since all three processes (requesting the page and getting its length) should run independently of each other.
+>
+> Here's how that would get set up.
+```javascript
+var async = require('async');
+async.parallel({
+  processOne : function(callback){
+    // Do a thing, and get either a result or an error.
+    // err = blah
+    // result = blah
+    callback(err, result);
+  },
+  processTwo : function(callback){ callback(err, result);},
+  processThree : function(callback){ callback(err, result);}
+}, function (err, results){
+  // Optional callback function for processing the collected results
+  // and for handling any errors that might come up during the process.
+});
+```
+> If we want to integrate these two things, we need to change 'charsOnPage' so that it passes its results back to `async`, rather than just printing them to the console.
+```javascript
+var async = require('async');
 
-You've now seen how `http` can be used to create and respond to HTTP requests, and you've also been exposed to
- -->
+var charsOnPage = function(url, callback) {
+  http.get(url, function(response){
+    var body = '';
+    response.setEncoding('utf8');
+    response.on('data', function(data){ body += data; });
+    response.on('end', function(){
+      callback(null, body.length);  // pass out result, with no errors
+    });
+  }).on('error', function(e){
+    callback(e, null);              // pass out error, with no results
+  });
+};
+
+async.parallel({
+  "http://www.google.com" : function(callback){charsOnPage("http://www.google.com", callback);},
+  "http://www.zombo.com/" : function(callback){charsOnPage("http://www.zombo.com", callback);},
+  "http://www.w3.org/" : function(callback){charsOnPage("http://www.w3.org/", callback);}
+}, function(err, results){
+  // For now, doing nothing with the results besides printing them.
+  console.log(results);
+});
+```
+> Given all this, do you think you can set up a server that will accept three URLs as arguments in a request, and send back a response with the url of the page with the most characters (and how long it is)? Give it a shot!
